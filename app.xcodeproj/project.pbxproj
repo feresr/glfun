@@ -11,6 +11,7 @@
 		C09EE74222BE8171001D8DE5 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C09EE74122BE8171001D8DE5 /* OpenGL.framework */; };
 		C09EE74422BE8230001D8DE5 /* glad.c in Sources */ = {isa = PBXBuildFile; fileRef = C09EE74322BE8230001D8DE5 /* glad.c */; };
 		C0C5A94B22BF623E0003D38D /* libglfw.3.4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C09EE74C22BE8C3E001D8DE5 /* libglfw.3.4.dylib */; };
+		C0F267FF22BF984A0042CACD /* loader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C0F267FE22BF984A0042CACD /* loader.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -34,6 +35,7 @@
 		C09EE74722BE85B2001D8DE5 /* libglfw.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libglfw.3.dylib; path = ../Libraries/Libs/libglfw.3.dylib; sourceTree = "<group>"; };
 		C09EE74922BE885C001D8DE5 /* libglfw.3.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libglfw.3.3.dylib; path = ../Libraries/Libs/libglfw.3.3.dylib; sourceTree = "<group>"; };
 		C09EE74C22BE8C3E001D8DE5 /* libglfw.3.4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libglfw.3.4.dylib; path = ../Libraries/Libs/libglfw.3.4.dylib; sourceTree = "<group>"; };
+		C0F267FE22BF984A0042CACD /* loader.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = loader.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -71,6 +73,7 @@
 			children = (
 				C09EE74322BE8230001D8DE5 /* glad.c */,
 				C09EE73922BE8166001D8DE5 /* main.cpp */,
+				C0F267FE22BF984A0042CACD /* loader.cpp */,
 			);
 			path = app;
 			sourceTree = "<group>";
@@ -144,6 +147,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C09EE73A22BE8166001D8DE5 /* main.cpp in Sources */,
+				C0F267FF22BF984A0042CACD /* loader.cpp in Sources */,
 				C09EE74422BE8230001D8DE5 /* glad.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

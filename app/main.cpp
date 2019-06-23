@@ -2,31 +2,38 @@
 #include <math.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include "STBIMAGE/stb_image.h"
 
 const char *vertexShaderSource = "#version 330 core\n"
 "layout (location = 0) in vec2 aPos;\n"
 "layout (location = 1) in vec3 red;\n"
+"layout (location = 2) in vec2 aTexCoord;\n"
 "out vec3 incolor;\n"
+"out vec2 texCoord;"
 "void main()\n"
 "{\n"
 "   gl_Position = vec4(aPos.x, aPos.y, 0.0f, 1.0);\n"
+"   texCoord = aTexCoord;"
 "   incolor = red;\n"
 "}\0";
 const char *fragmentShaderSource = "#version 330 core\n"
 "out vec4 FragColor;\n"
 "in vec3 incolor;\n"
+"in vec2 texCoord;\n"
 "uniform vec4 ucolor;\n"
+"uniform sampler2D texture1;\n"
+"uniform sampler2D texture2;\n"
 "void main()\n"
 "{\n"
-"   FragColor = vec4(incolor.x * ucolor.x, incolor.y * ucolor.y, incolor.z * ucolor.z, 1.0f);\n"
+"   FragColor = mix(texture(texture1, texCoord), texture(texture2, texCoord), 0.2);\n"
 "}\n\0";
 
 float vertices[] = {
-    //positions     //colors
-    -.5f, -.5f,     .0f, .4f, 0.2f,
-    .5f, -.5f,      .0f, .0f, 0.6f,
-    .5f, .5f,       .4f, 0.1f, .0f,
-    -.5f, .5f,      1.0, 0.9f, 0.1f
+    //positions     //colors            //tex coors
+    -.5f, -.5f,     .0f, .4f, 0.2f,     0.0f, 0.0f,
+    .5f, -.5f,      .0f, .0f, 0.6f,     1.0f, 0.0f,
+    .5f, .5f,       .4f, 0.1f, .0f,     1.0f, 1.0f,
+    -.5f, .5f,      1.0, 0.9f, 0.1f,    0.0f, 1.0f
 };
 
 unsigned int indices[] = { 0, 1, 2, 2, 3, 0 };
@@ -109,6 +116,28 @@ void checkForErrors() {
     std::cout << std::endl;
 }
 
+unsigned int createTexture(const char* path, GLenum format) {
+    int width, height, nrChannels;
+    unsigned char *data = stbi_load(path, &width, &height, &nrChannels, 0);
+    
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture: " << path << std::endl;
+    }
+    
+    stbi_image_free(data);
+    return texture;
+}
+
 int main() {
     
     GLFWwindow* window = initOpenGl();
@@ -132,14 +161,20 @@ int main() {
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
     
-    //tell opengl how to read data
+    //how much to move to get to the next vertex
+    float stride = 7 * sizeof(float);
+    
     // positions
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, stride, (void*)0);
     glEnableVertexAttribArray(0);
     
     // colors
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (2 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*) (2 * sizeof(float)));
     glEnableVertexAttribArray(1);
+    
+    // tex coords
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*) (5 * sizeof(float)));
+    glEnableVertexAttribArray(2);
     
     //IBO (index buffer object)
     unsigned int ibo;
@@ -149,12 +184,35 @@ int main() {
     
     int colorUniform = glGetUniformLocation(shaderProgram, "ucolor");
     
+    checkForErrors();
+    
+    //Textures
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    
+    unsigned int texture1 = createTexture("/Users/feresr/Workspace/learnOpenGL/app/container.jpg", GL_RGB);
+    // OpenGL expects the 0.0 coordinate on the y-axis to be on the bottom side,
+    // images usually have 0.0 at the top of the y-axis
+    stbi_set_flip_vertically_on_load(true);
+    unsigned int texture2 = createTexture("/Users/feresr/Workspace/learnOpenGL/app/awesomeface.png", GL_RGBA);
+    
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture1);
+    glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 0); // 0 refers to texture unit (GL_TEXTURE0)
+    
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture2);
+    glUniform1i(glGetUniformLocation(shaderProgram, "texture2"), 1); // 1 refers to texture unit (GL_TEXTURE1)
+    
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    
     float time = 0.0f;
     float step = .02f;
     
-    checkForErrors();
-    
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     //render loop
     while(!glfwWindowShouldClose(window)) {
         //inputs
