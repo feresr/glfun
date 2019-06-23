@@ -1,27 +1,35 @@
 #include <iostream>
+#include <math.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 const char *vertexShaderSource = "#version 330 core\n"
 "layout (location = 0) in vec2 aPos;\n"
 "layout (location = 1) in vec3 red;\n"
-"out vec4 incolor;\n"
+"out vec3 incolor;\n"
 "void main()\n"
 "{\n"
 "   gl_Position = vec4(aPos.x, aPos.y, 0.0f, 1.0);\n"
-"   incolor = vec4(red, 1.0f);\n"
+"   incolor = red;\n"
 "}\0";
 const char *fragmentShaderSource = "#version 330 core\n"
 "out vec4 FragColor;\n"
-"in vec4 incolor;\n"
+"in vec3 incolor;\n"
 "uniform vec4 ucolor;\n"
 "void main()\n"
 "{\n"
-"   FragColor = incolor;\n"
+"   FragColor = vec4(incolor.x * ucolor.x, incolor.y * ucolor.y, incolor.z * ucolor.z, 1.0f);\n"
 "}\n\0";
 
+float vertices[] = {
+    //positions     //colors
+    -.5f, -.5f,     .0f, .4f, 0.2f,
+    .5f, -.5f,      .0f, .0f, 0.6f,
+    .5f, .5f,       .4f, 0.1f, .0f,
+    -.5f, .5f,      1.0, 0.9f, 0.1f
+};
 
-unsigned int indices[] = { 0, 1, 2 };
+unsigned int indices[] = { 0, 1, 2, 2, 3, 0 };
 
 float texCoords[] = {
     0.0f, 0.0f,  // lower-left corner
@@ -55,7 +63,7 @@ unsigned int compileShader(GLenum type, const char* source) {
     return shader;
 }
 
-unsigned int createProgram(unsigned int vs, unsigned int fs){
+unsigned int createProgram(unsigned int vs, unsigned int fs) {
     unsigned int shaderProgram;
     shaderProgram = glCreateProgram();
     
@@ -101,7 +109,7 @@ void checkForErrors() {
     std::cout << std::endl;
 }
 
-int main(int argc, const char * argv[]) {
+int main() {
     
     GLFWwindow* window = initOpenGl();
     if (window == NULL) return -1;
@@ -113,21 +121,7 @@ int main(int argc, const char * argv[]) {
     glDeleteShader(fs);
     glDeleteShader(vs);
     
-    
-    //glBindBuffer(GL_ARRAY_BUFFER, 0);
-    
     // CREATE A VBO (Vertex Buffer Object)
-    // OpenGL has many types of buffer objects and the buffer type of a vertex buffer object is GL_ARRAY_BUFFER
-    // From that point on any buffer calls we make (on the GL_ARRAY_BUFFER target) will be used to configure the currently bound buffer, which is VBO.
-    // 2. copy our vertices array in a buffer for OpenGL to use
-    
-    float rf = .0f;
-    float vertices[] = {
-        //positions  //colors
-        -.5f, -.5f, rf, .4f, 0.2f,
-        .5f, -.5f,  .0f, rf, 0.6f,
-        .0f, .5f,   .4f, 0.1f, rf
-    };
     unsigned int VBO;
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -137,10 +131,13 @@ int main(int argc, const char * argv[]) {
     unsigned int VAO;
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
+    
     //tell opengl how to read data
+    // positions
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     
+    // colors
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (2 * sizeof(float)));
     glEnableVertexAttribArray(1);
     
@@ -148,13 +145,11 @@ int main(int argc, const char * argv[]) {
     unsigned int ibo;
     glGenBuffers(1, &ibo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3 * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     
-    int location = glGetUniformLocation(shaderProgram, "ucolor");
+    int colorUniform = glGetUniformLocation(shaderProgram, "ucolor");
     
-    float r = 0.0f;
-    float g = 1.0f;
-    float b = 1.0f;
+    float time = 0.0f;
     float step = .02f;
     
     checkForErrors();
@@ -164,27 +159,19 @@ int main(int argc, const char * argv[]) {
     while(!glfwWindowShouldClose(window)) {
         //inputs
         processInput(window);
-        rf += step * 2;
-        glUniform4f(location, r, g, b, 1.0f);
-        if (r > 1.0f || r < 0.0f) {
-            step *= -1;
-        }
-        r += step;
+        glUniform4f(
+                    colorUniform,
+                    (sin(time) + 1.0f) / 2.0f,
+                    (sin(.6f * time) + 1.0f) / 2.0f,
+                    (sin(.2f * time) + 1.0f) / 2.0f,
+                    1.0f);
+        time += step;
         
-        float vertices[] = {
-            //positions  //colors
-            -.5f, -.5f, rf, .4f, 0.2f,
-            .5f, -.5f,  .0f, rf, 0.6f,
-            .0f, .5f,   .4f, 0.1f, rf
-        };
-        
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
         //rendering
         //glClearColor(.2f, .3f, .4f, 1.0f); //sets the color
-        //glClearColor(0.8f, 0.3f, 0.7f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT); // clears buffer bits (other buffer GL_DEPTH_BUFFER_BIT and GL_STENCIL_BUFFER_BIT)
+        glClear(GL_COLOR_BUFFER_BIT);
         
-        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         //glDrawArrays(GL_TRIANGLES, 0, 3);
         
         //openGL primitives  GL_POINTS, GL_TRIANGLES and GL_LINE_STRIP.
