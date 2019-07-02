@@ -4,30 +4,52 @@
 #include <GLFW/glfw3.h>
 #include "STBIMAGE/stb_image.h"
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+/**
+ uniform: are per-primitive parameters (constant during an entire draw call) ;
+ attribute: are per-vertex parameters (typically : positions, normals, colors, UVs, ...) ;
+ varying: are per-fragment (or per-pixel) parameters : they vary from pixels to pixels.
+**/
+
 const char *vertexShaderSource = "#version 330 core\n"
+
 "layout (location = 0) in vec2 aPos;\n"
-"layout (location = 1) in vec3 red;\n"
+"layout (location = 1) in vec3 aColor;\n"
 "layout (location = 2) in vec2 aTexCoord;\n"
+
+"uniform mat4 model;\n"
+"uniform mat4 view;\n"
+"uniform mat4 projection;\n"
+
 "out vec3 incolor;\n"
-"out vec2 texCoord;"
+"out vec2 texCoord;\n"
+
 "void main()\n"
 "{\n"
-"   gl_Position = vec4(aPos.x, aPos.y, 0.0f, 1.0);\n"
+"   gl_Position = projection * view * model * vec4(aPos.x, aPos.y, 0.0f, 1.0);\n"
 "   texCoord = aTexCoord;"
-"   incolor = red;\n"
+"   incolor = aColor;\n"
 "}\0";
+
 const char *fragmentShaderSource = "#version 330 core\n"
-"out vec4 FragColor;\n"
-"in vec3 incolor;\n"
-"in vec2 texCoord;\n"
+
 "uniform vec4 ucolor;\n"
 "uniform sampler2D texture1;\n"
 "uniform sampler2D texture2;\n"
+
+"in vec3 incolor;\n"
+"in vec2 texCoord;\n"
+
+"out vec4 fragmentColor;\n"
+
 "void main()\n"
 "{\n"
-"   FragColor = mix(texture(texture1, texCoord), texture(texture2, texCoord), 0.2);\n"
+"   fragmentColor = mix(texture(texture1, texCoord), texture(texture2, texCoord), ucolor.x);\n"
 "}\n\0";
-
+ 
 float vertices[] = {
     //positions     //colors            //tex coors
     -.5f, -.5f,     .0f, .4f, 0.2f,     0.0f, 0.0f,
@@ -182,8 +204,6 @@ int main() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     
-    int colorUniform = glGetUniformLocation(shaderProgram, "ucolor");
-    
     checkForErrors();
     
     //Textures
@@ -210,21 +230,45 @@ int main() {
     
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     
-    float time = 0.0f;
-    float step = .02f;
+    float cameraDistance = 2.0f;
     
     //render loop
     while(!glfwWindowShouldClose(window)) {
         //inputs
         processInput(window);
+        
+        //model
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::rotate(model, (float) glfwGetTime(), glm::vec3(1.0f, 0.0f, 0.0f));
+        //model = glm::scale(model, glm::vec3(0.5, 0.5, 0.5));
+        //model = glm::translate(model, glm::vec3(.5f, -0.5f, .0f));
+        
+        //view
+        //move the camera back so it's not too close to the near plane
+        glm::mat4 view = glm::mat4(1.0f);
+        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -1 * cameraDistance));
+        cameraDistance+=0.001f;
+
+        //perspective
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), float(800.0f/600.0f), .1f, 100.0f);
+        
+        unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        
+        unsigned int viewLoc = glGetUniformLocation(shaderProgram, "view");
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+        
+        unsigned int proyectionLoc = glGetUniformLocation(shaderProgram, "projection");
+        glUniformMatrix4fv(proyectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+        
+        int colorUniform = glGetUniformLocation(shaderProgram, "ucolor");
         glUniform4f(
                     colorUniform,
-                    (sin(time) + 1.0f) / 2.0f,
-                    (sin(.6f * time) + 1.0f) / 2.0f,
-                    (sin(.2f * time) + 1.0f) / 2.0f,
+                    (sin((float) glfwGetTime()) + 1.0f) / 2.0f,
+                    (sin(.6f * (float) glfwGetTime()) + 1.0f) / 2.0f,
+                    (sin(.2f * (float) glfwGetTime()) + 1.0f) / 2.0f,
                     1.0f);
-        time += step;
-        
+    
         //rendering
         //glClearColor(.2f, .3f, .4f, 1.0f); //sets the color
         glClear(GL_COLOR_BUFFER_BIT);
