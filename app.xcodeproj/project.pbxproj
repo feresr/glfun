@@ -27,6 +27,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		C02B359222CCE3CB00CD14C8 /* main.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = main.h; sourceTree = "<group>"; };
 		C09EE73622BE8166001D8DE5 /* app */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C09EE73922BE8166001D8DE5 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		C09EE74122BE8171001D8DE5 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
@@ -74,6 +75,7 @@
 				C09EE74322BE8230001D8DE5 /* glad.c */,
 				C09EE73922BE8166001D8DE5 /* main.cpp */,
 				C0F267FE22BF984A0042CACD /* loader.cpp */,
+				C02B359222CCE3CB00CD14C8 /* main.h */,
 			);
 			path = app;
 			sourceTree = "<group>";
